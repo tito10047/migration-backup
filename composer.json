@@ -1,0 +1,27 @@
+{
+  "name": "tito10047/migration-backup",
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "description": "Backup database on migrate command",
+  "minimum-stability": "stable",
+  "require": {
+    "php": ">=8.1",
+    "doctrine/doctrine-bundle": "^2.12",
+    "doctrine/orm": "^2.19",
+    "symfony/filesystem": "^6.4|^7.0",
+    "symfony/framework-bundle": "^6.4|^7.0"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Tito10047\\MigrationBackup\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tito10047\\MigrationBackup\\Tests\\": "tests/"
+    }
+  }
+}
