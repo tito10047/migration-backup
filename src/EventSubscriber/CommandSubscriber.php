@@ -80,7 +80,7 @@ class CommandSubscriber implements EventSubscriberInterface {
 
 	private function dumpDatabase(string $database, string $username, string $password, string $path): void {
 
-		$cmd = sprintf('mysqldump -B %s -u %s --password=%s', $database, $username, $password);
+		$cmd = sprintf('mysqldump -B %s -u %s --password=%s --hex-blob', $database, $username, $password);
 
 		[$output, $exit_status] = $this->runCommand($cmd);
 
