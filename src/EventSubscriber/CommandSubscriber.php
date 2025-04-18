@@ -54,13 +54,7 @@ class CommandSubscriber implements EventSubscriberInterface {
 		$command->addOption('backup', 'b', InputOption::VALUE_OPTIONAL, 'Backup database before migration', false);
 		$input          = $event->getInput();
 		assert($input instanceof ArgvInput);
-		$optionIsPassed = false;
-		foreach ($input->getRawTokens() as $token) {
-			if ($token == '--backup') {
-				$optionIsPassed=true;
-			}
-		}
-		if (!$optionIsPassed) {
+        if (!$input->hasParameterOption('--backup')) {
 			return;
 		}
 		foreach ($this->databases as $database) {
@@ -72,7 +66,7 @@ class CommandSubscriber implements EventSubscriberInterface {
 				$params['password'],
 				$filename
 			);
-			$io->writeln('Backup of database ' . $database . ' created in ' . $filename);
+            $io->writeln('Backup of database default created ' . $filename);
 
 		}
 	}

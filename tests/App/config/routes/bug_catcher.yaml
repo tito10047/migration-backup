@@ -1,0 +1,3 @@
+_bug_catcher:
+  resource: "@Tito10047\MigrationBackupBundle/config/routes.php"
+  prefix: /

@@ -1,0 +1,4 @@
+migration_backup:
+  backup_path: '%kernel.project_dir%/tests/App/migration_backup'
+  database:
+    - default

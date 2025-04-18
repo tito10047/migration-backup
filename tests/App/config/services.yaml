@@ -1,0 +1,14 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+  Tito10047\MigrationBackup\Tests\App\:
+    resource: '../'
+    exclude:
+      - '../config/'
+      - '../Factory/'
+      - '../Entity/'
+      - '../migration_backup/'
+      - '../migrations/'
+      - '../src/Kernel.php'
+      - '../src/KernelTestCase.php'

@@ -1,0 +1,77 @@
+name: "Tests"
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '* 8 * * *'
+
+jobs:
+  compatibility:
+    name: "Tests"
+
+    runs-on: ${{ matrix.operating-system }}
+
+    strategy:
+      matrix:
+        dependencies:
+          - "lowest"
+          - "highest"
+        php-version:
+          - "8.1"
+          - "8.2"
+          - "8.3"
+          - "8.4"
+        symfony:
+          - '5.4.*'
+          - '6.4.*'
+          - '7.0.*'
+          - '7.1.*'
+          - '7.2.*'
+        operating-system:
+          - "ubuntu-latest"
+          - "windows-latest"
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Install PHP"
+        uses: "shivammathur/setup-php@v2"
+        with:
+          coverage: "pcov"
+          php-version: "${{ matrix.php-version }}"
+          extensions: pdo_sqlite, mysql
+          ini-values: memory_limit=-1
+
+      - name: set sql mode
+        run: mysql --protocol=tcp -h localhost -P ${{ job.services.mysql.ports['3306'] }}  -uroot -psymfony -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
+
+
+      - name: Configure Symfony
+        run: composer config extra.symfony.require "${{ matrix.symfony }}"
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: "Cache dependencies"
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ matrix.php }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ matrix.php }}-composer-
+
+      - name: "Install lowest dependencies"
+        if: ${{ matrix.dependencies == 'lowest' }}
+        run: "composer update --prefer-lowest --no-interaction --no-progress --no-suggest"
+
+      - name: "Install highest dependencies"
+        if: ${{ matrix.dependencies == 'highest' }}
+        run: "composer update --no-interaction --no-progress --no-suggest"
+
+
+      - name: Execute tests (Unit and Feature tests) via PHPUnit
+        env:
+          DATABASE_URL: mysql://root:symfony@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/symfony
+        run: vendor/bin/phpunit --coverage-clover build/reports/clover.xml
