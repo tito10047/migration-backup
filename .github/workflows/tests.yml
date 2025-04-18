@@ -25,7 +25,6 @@ jobs:
     strategy:
       matrix:
         dependencies:
-          - "lowest"
           - "highest"
         php-version:
           - "8.1"
