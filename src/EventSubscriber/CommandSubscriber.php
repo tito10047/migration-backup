@@ -66,7 +66,7 @@ class CommandSubscriber implements EventSubscriberInterface {
 				$params['password'],
 				$filename
 			);
-            $io->writeln('Backup of database default created ' . $filename);
+            $io->writeln('Backup of database ' . $database . ' created in ' . $filename);
 
 		}
 	}
