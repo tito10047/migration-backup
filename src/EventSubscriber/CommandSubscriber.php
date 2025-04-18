@@ -14,6 +14,7 @@ use Exception;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Input\Input;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Filesystem\Filesystem;
@@ -53,7 +54,7 @@ class CommandSubscriber implements EventSubscriberInterface {
 		// add --backup option to command definition
 		$command->addOption('backup', 'b', InputOption::VALUE_OPTIONAL, 'Backup database before migration', false);
 		$input          = $event->getInput();
-		assert($input instanceof ArgvInput);
+		assert($input instanceof Input);
         if (!$input->hasParameterOption('--backup')) {
 			return;
 		}

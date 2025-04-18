@@ -49,11 +49,8 @@ jobs:
         with:
           coverage: "pcov"
           php-version: "${{ matrix.php-version }}"
-          extensions: pdo_sqlite, mysql
+          extensions: pdo_sqlite, mysql, mysql-client
           ini-values: memory_limit=-1
-
-      - name: set sql mode
-        run: mysql --protocol=tcp -h localhost -P ${{ job.services.mysql.ports['3306'] }}  -uroot -psymfony -e "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
 
 
       - name: Configure Symfony
