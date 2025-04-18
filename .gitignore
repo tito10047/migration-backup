@@ -4,3 +4,4 @@ composer.lock
 .phpunit.result.cache
 /var
 /tests/App/migration_backup
+.env.test.local
