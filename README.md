@@ -1,6 +1,10 @@
+[![Tests](https://github.com/tito10047/migration-backup/actions/workflows/tests.yml/badge.svg)](https://github.com/tito10047/migration-backup/actions/workflows/tests.yml)
+
 # Doctrine Backup Bundle
 
 This bundle provides a simple way to backup your database schema and data before running migrations.
+
+Support for Symfony 6.4,^7.0 and upper and PHP 8.1 - 8.4
 
 ## Usage
 
