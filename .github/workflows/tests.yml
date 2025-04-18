@@ -49,7 +49,7 @@ jobs:
         with:
           coverage: "pcov"
           php-version: "${{ matrix.php-version }}"
-          extensions: pdo_sqlite, mysql, mysql-client
+          extensions: pdo_sqlite, mysql
           ini-values: memory_limit=-1
 
 

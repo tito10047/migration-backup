@@ -62,6 +62,8 @@ class CommandSubscriber implements EventSubscriberInterface {
 			$params   = $this->registry->getConnection($database)->getParams();
 			$filename = $this->backupPath . '/' . $database . '-' . date('Y-m-d-H-i-s') . '.sql';
 			$this->dumpDatabase(
+				$params['host'],
+				$params['port'],
 				$params['dbname'],
 				$params['user'],
 				$params['password'],
@@ -73,9 +75,9 @@ class CommandSubscriber implements EventSubscriberInterface {
 	}
 
 
-	private function dumpDatabase(string $database, string $username, string $password, string $path): void {
+	private function dumpDatabase(string $host, string $port, string $database, string $username, string $password, string $path): void {
 
-		$cmd = sprintf('mysqldump -B %s -u %s --password=%s --hex-blob', $database, $username, $password);
+		$cmd = sprintf('mysqldump -h %s -P %s -B %s -u %s --password=%s --hex-blob', $host,$port,$database, $username, $password);
 
 		[$output, $exit_status] = $this->runCommand($cmd);
 
