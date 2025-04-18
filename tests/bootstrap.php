@@ -34,6 +34,5 @@ $runCommand('doctrine:database:drop', [
 $runCommand('doctrine:database:create', [
     '--no-interaction' => true
 ]);
-$runCommand('doctrine:schema:create');
 
 $kernel->shutdown();

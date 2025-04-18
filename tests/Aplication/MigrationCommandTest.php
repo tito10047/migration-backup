@@ -22,6 +22,7 @@ class MigrationCommandTest extends KernelTestCase
         $tester->run(array(
             'command' => 'doctrine:migrations:migrate',
             '--no-interaction' => true,
+            '--all-or-nothing' => 0,
             '--backup' => true,
         ));
 
@@ -43,6 +44,7 @@ class MigrationCommandTest extends KernelTestCase
         $tester = new ApplicationTester($application);
         $tester->run(array(
             'command' => 'doctrine:migrations:migrate',
+            '--all-or-nothing' => 0,
             '--no-interaction' => true,
         ));
 
