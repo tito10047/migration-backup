@@ -4,10 +4,6 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 
 return static function (ContainerConfigurator $containerConfigurator): void {
     $ormConfig = [
-        'auto_generate_proxy_classes' => true,
-        'enable_lazy_ghost_objects' => true,
-        'report_fields_where_declared' => true,
-        'validate_xml_mapping' => true,
         'naming_strategy' => 'doctrine.orm.naming_strategy.underscore_number_aware',
         'auto_mapping' => true,
         'mappings' => [
@@ -24,16 +20,34 @@ return static function (ContainerConfigurator $containerConfigurator): void {
         ],
     ];
 
+    if (class_exists(\Composer\InstalledVersions::class)
+        && \Composer\InstalledVersions::isInstalled('doctrine/orm')
+        && version_compare(\Composer\InstalledVersions::getVersion('doctrine/orm'), '3.0.0', '<')
+    ) {
+        $ormConfig['auto_generate_proxy_classes'] = true;
+        $ormConfig['enable_lazy_ghost_objects'] = true;
+        $ormConfig['report_fields_where_declared'] = true;
+        $ormConfig['validate_xml_mapping'] = true;
+    }
+
     if (PHP_VERSION_ID >= 80400) {
         $ormConfig['enable_native_lazy_objects'] = true;
     }
 
+    $dbalConfig = [
+        'url' => '%env(resolve:DATABASE_URL)%',
+        'profiling_collect_backtrace' => '%kernel.debug%',
+    ];
+
+    if (class_exists(\Composer\InstalledVersions::class)
+        && \Composer\InstalledVersions::isInstalled('doctrine/persistence')
+        && version_compare(\Composer\InstalledVersions::getVersion('doctrine/persistence'), '4.0.0', '<')
+    ) {
+        $dbalConfig['use_savepoints'] = true;
+    }
+
     $containerConfigurator->extension('doctrine', [
-        'dbal' => [
-            'url' => '%env(resolve:DATABASE_URL)%',
-            'profiling_collect_backtrace' => '%kernel.debug%',
-            'use_savepoints' => true,
-        ],
+        'dbal' => $dbalConfig,
         'orm' => $ormConfig,
     ]);
 

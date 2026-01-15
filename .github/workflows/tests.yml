@@ -33,6 +33,10 @@ jobs:
           - '6.4.*'
           - '7.4.*'
           - '8.0.*'
+        persistence:
+          - '3.4.*'
+          - '4.0.*'
+          - '4.1.*'
         exclude:
           -   php-version: "8.2"
               symfony: '8.0.*'
@@ -58,6 +62,9 @@ jobs:
 
       - name: Configure Symfony
         run: composer config extra.symfony.require "${{ matrix.symfony }}"
+
+      - name: Configure Doctrine Persistence
+        run: composer require "doctrine/persistence:${{ matrix.persistence }}" --no-update --no-interaction
 
       - name: Get Composer Cache Directory
         id: composer-cache
