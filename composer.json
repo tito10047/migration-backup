@@ -5,8 +5,8 @@
   "description": "Backup database on migrate command",
   "minimum-stability": "stable",
   "require": {
-    "php": ">=8.1",
-    "doctrine/doctrine-bundle": "^2.12",
+    "php": ">=8.2",
+    "doctrine/doctrine-bundle": "^2.12|^3.0",
     "doctrine/doctrine-migrations-bundle": "^3.4",
     "doctrine/orm": "^2.19|^3.1.0",
     "doctrine/persistence": "^3.4"
