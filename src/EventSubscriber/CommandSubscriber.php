@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\Input;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Process\Process;
 
 class CommandSubscriber implements EventSubscriberInterface {
 
@@ -81,25 +82,26 @@ class CommandSubscriber implements EventSubscriberInterface {
 
 
 	private function dumpDatabase(string $host, string $port, string $database, string $username, string $password, string $path): void {
+		$cmd = [
+			'mysqldump',
+			'-h', $host,
+			'-P', $port,
+			'-B', $database,
+			'-u', $username,
+			'--hex-blob',
+		];
 
-		$cmd = sprintf('mysqldump -h %s -P %s -B %s -u %s --password=%s --hex-blob', $host,$port,$database, $username, $password);
+		$process = new Process($cmd, null, [
+			'MYSQL_PWD' => $password,
+		]);
 
-		[$output, $exit_status] = $this->runCommand($cmd);
+		$process->run();
 
-		if ($exit_status > 0) {
-			throw new Exception('Could not dump database: ' . var_export($output, true));
+		if (!$process->isSuccessful()) {
+			throw new Exception('Could not dump database: ' . $process->getErrorOutput());
 		}
 
-		$this->fs->dumpFile($path, implode("\n", $output));
-	}
-
-	protected function runCommand($command): array {
-		$command .= " >&1";
-		exec($command, $output, $exit_status);
-
-		return [
-			$output, $exit_status,
-		];
+		$this->fs->dumpFile($path, $process->getOutput());
 	}
 
 }
