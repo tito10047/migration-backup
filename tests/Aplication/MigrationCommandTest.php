@@ -7,9 +7,30 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Tester\ApplicationTester;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tito10047\MigrationBackup\Tests\App\KernelTestCase;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 
 class MigrationCommandTest extends KernelTestCase
 {
+    private string $backupDir;
+    private Filesystem $fs;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->backupDir = __DIR__ . '/../App/migration_backup';
+        $this->fs = new Filesystem();
+        
+        // Vyčistíme priečinok pred testom (okrem .keep)
+        if ($this->fs->exists($this->backupDir)) {
+            $finder = new Finder();
+            $finder->files()->in($this->backupDir)->notName('.keep');
+            foreach ($finder as $file) {
+                $this->fs->remove($file->getRealPath());
+            }
+        }
+    }
+
     public function testBackupCreated()
     {
 
@@ -28,8 +49,10 @@ class MigrationCommandTest extends KernelTestCase
 
         $tester->assertCommandIsSuccessful();
 
-        $output = $tester->getDisplay();
-        $this->assertStringContainsString('Backup of database default created', $output);
+        $finder = new Finder();
+        $finder->files()->in($this->backupDir)->name('default-*.sql');
+        
+        $this->assertCount(1, $finder, "Záloha databázy by mala existovať na disku.");
 
     }
 
@@ -50,8 +73,13 @@ class MigrationCommandTest extends KernelTestCase
 
         $tester->assertCommandIsSuccessful();
 
-        $output = $tester->getDisplay();
-        $this->assertStringNotContainsString('Backup of database default created', $output);
+        $finder = new Finder();
+        if ($this->fs->exists($this->backupDir)) {
+            $finder->files()->in($this->backupDir)->name('default-*.sql');
+            $this->assertCount(0, $finder, "Záloha databázy by nemala existovať.");
+        } else {
+            $this->assertTrue(true);
+        }
 
     }
 }

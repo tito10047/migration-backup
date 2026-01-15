@@ -50,14 +50,19 @@ class CommandSubscriber implements EventSubscriberInterface {
 		if ($command->getName() != 'doctrine:migrations:migrate') {
 			return;
 		}
-		$io = $event->getOutput();
+
 		// add --backup option to command definition
-		$command->addOption('backup', 'b', InputOption::VALUE_OPTIONAL, 'Backup database before migration', false);
+        if (!$command->getDefinition()->hasOption('backup')) {
+		    $command->addOption('backup', 'b', InputOption::VALUE_OPTIONAL, 'Backup database before migration', false);
+        }
+
 		$input          = $event->getInput();
 		assert($input instanceof Input);
         if (!$input->hasParameterOption('--backup')) {
 			return;
 		}
+
+        $io = $event->getOutput();
 		foreach ($this->databases as $database) {
 			$params   = $this->registry->getConnection($database)->getParams();
 			$filename = $this->backupPath . '/' . $database . '-' . date('Y-m-d-H-i-s') . '.sql';

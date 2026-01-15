@@ -25,13 +25,21 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.1"
           - "8.2"
           - "8.3"
           - "8.4"
+          - "8.5"
         symfony:
           - '6.4.*'
-          - '7.2.*'
+          - '7.4.*'
+          - '8.0.*'
+        exclude:
+          -   php-version: "8.2"
+              symfony: '8.0.*'
+              operating-system: "ubuntu-latest"
+          -   php-version: "8.3"
+              symfony: '8.0.*'
+              operating-system: "ubuntu-latest"
         operating-system:
           - "ubuntu-latest"
 
