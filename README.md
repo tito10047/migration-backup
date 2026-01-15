@@ -4,7 +4,7 @@
 
 This bundle provides a simple way to backup your database schema and data before running migrations.
 
-Support for Symfony 6.4,^7.0 and upper and PHP 8.1 - 8.4
+Support for Symfony 6.4,7.4,^8.0 and upper and PHP 8.2 - 8.5
 
 ## Usage
 
