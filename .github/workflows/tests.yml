@@ -63,6 +63,7 @@ jobs:
           php-version: "${{ matrix.php-version }}"
           extensions: pdo_sqlite, pdo_mysql, pdo_pgsql
           ini-values: memory_limit=-1
+          tools: php-coveralls
 
       - name: Stop pre-installed MySQL
         run: sudo /etc/init.d/mysql stop
@@ -93,4 +94,11 @@ jobs:
         env:
           DATABASE_URL: mysql://root:symfony@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/symfony_test
           DATABASE_POSTGRES_URL: postgresql://postgres:symfony@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/symfony_test
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit --coverage-clover build/reports/clover.xml
+
+      - name: Upload coverage results to Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          php-coveralls --coverage_clover=build/reports/clover.xml --json_path=build/reports/coveralls-upload.json -v
+        continue-on-error: true
