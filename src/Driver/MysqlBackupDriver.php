@@ -25,6 +25,7 @@ class MysqlBackupDriver implements BackupDriverInterface {
 			'-B', $params->database,
 			'-u', $params->user,
 			'--hex-blob',
+			'--result-file=' . $outputPath,
 		];
 
 		$process = new Process($cmd, null, [
@@ -36,7 +37,5 @@ class MysqlBackupDriver implements BackupDriverInterface {
 		if (!$process->isSuccessful()) {
 			throw new BackupFailedException('Could not dump database: ' . $process->getErrorOutput());
 		}
-
-		$this->fs->dumpFile($outputPath, $process->getOutput());
 	}
 }

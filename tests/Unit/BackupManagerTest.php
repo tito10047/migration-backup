@@ -36,7 +36,7 @@ class BackupManagerTest extends TestCase {
 			$this->storageProvider,
 			$this->eventDispatcher,
 			$this->fs,
-			'/tmp/backup'
+			0
 		);
 	}
 
@@ -65,15 +65,21 @@ class BackupManagerTest extends TestCase {
 		$driver->expects($this->once())
 			->method('dump')
 			->with($params, $this->callback(function (string $path) {
-				return str_contains($path, '/tmp/backup/default-');
+				return str_contains($path, sys_get_temp_dir());
 			}));
 
 		$this->storageProvider->expects($this->once())
 			->method('store')
 			->with($this->callback(function (string $path) {
-				return str_contains($path, '/tmp/backup/default-');
-			}), 'default-' . date('Y-m-d-H-i-s') . '.sql')
+				return str_contains($path, sys_get_temp_dir());
+			}), $this->callback(function (string $filename) {
+				return str_starts_with($filename, 'default-') && str_ends_with($filename, '.sql');
+			}))
 			->willReturn('stored_path');
+
+		$this->storageProvider->expects($this->once())
+			->method('cleanup')
+			->with($connectionName, 0);
 
 		$result = $this->backupManager->backup($connectionName);
 
@@ -93,6 +99,42 @@ class BackupManagerTest extends TestCase {
 				[$this->isInstanceOf(BackupStartedEvent::class)],
 				[$this->isInstanceOf(BackupFailedEvent::class)]
 			);
+
+		$this->expectException(Exception::class);
+		$this->backupManager->backup($connectionName);
+	}
+
+	public function testCleanupIsCalled(): void {
+		$connectionName = 'default';
+		$params         = new ConnectionParams('localhost', '3306', 'db', 'user', 'pass', 'pdo_mysql');
+		$driver         = $this->createMock(BackupDriverInterface::class);
+
+		$this->connectionResolver->method('resolve')->willReturn($params);
+		$this->driverRegistry->method('getDriver')->willReturn($driver);
+		$this->storageProvider->method('store')->willReturn('path');
+
+		$this->storageProvider->expects($this->once())
+			->method('cleanup')
+			->with($connectionName, 0);
+
+		$this->backupManager->backup($connectionName);
+	}
+
+	public function testTempFileIsRemovedOnFailure(): void {
+		$connectionName = 'default';
+		$params         = new ConnectionParams('localhost', '3306', 'db', 'user', 'pass', 'pdo_mysql');
+		$driver         = $this->createMock(BackupDriverInterface::class);
+
+		$this->connectionResolver->method('resolve')->willReturn($params);
+		$this->driverRegistry->method('getDriver')->willReturn($driver);
+		
+		$driver->method('dump')->willThrowException(new Exception('Dump failed'));
+
+		// Expect fs->remove() to be called at least once (for the temp file)
+		$this->fs->expects($this->atLeastOnce())
+			->method('remove');
+
+		$this->fs->method('exists')->willReturn(true);
 
 		$this->expectException(Exception::class);
 		$this->backupManager->backup($connectionName);

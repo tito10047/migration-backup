@@ -18,6 +18,14 @@ jobs:
         ports:
           - 3306/tcp
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: symfony
+          POSTGRES_DB: symfony_test
+        ports:
+          - 5432/tcp
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
     name: "Tests"
 
     runs-on: ${{ matrix.operating-system }}
@@ -53,7 +61,7 @@ jobs:
         with:
           coverage: "pcov"
           php-version: "${{ matrix.php-version }}"
-          extensions: pdo_sqlite, pdo_mysql
+          extensions: pdo_sqlite, pdo_mysql, pdo_pgsql
           ini-values: memory_limit=-1
 
       - name: Stop pre-installed MySQL
@@ -83,5 +91,6 @@ jobs:
 
       - name: Execute tests (Unit and Feature tests) via PHPUnit
         env:
-          DATABASE_URL: mysql://root:symfony@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/symfony
+          DATABASE_URL: mysql://root:symfony@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/symfony_test
+          DATABASE_POSTGRES_URL: postgresql://postgres:symfony@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/symfony_test
         run: vendor/bin/phpunit

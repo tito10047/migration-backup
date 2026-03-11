@@ -946,7 +946,10 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  * @psalm-type MigrationBackupConfig = array{
  *     backup_path?: scalar|null|Param, // Default: "%kernel.project_dir%/backup"
  *     backup_binary?: scalar|null|Param, // Default: "mysqldump"
+ *     pg_dump_binary?: scalar|null|Param, // Default: "pg_dump"
  *     database?: list<scalar|null|Param>,
+ *     keep_last_n_backups?: int|Param, // Number of backups to keep. 0 means keep all. // Default: 0
+ *     compress?: bool|Param, // Compress backup with gzip. // Default: false
  * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,

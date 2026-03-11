@@ -9,6 +9,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Tito10047\MigrationBackup\BackupManager;
 use Tito10047\MigrationBackup\Driver\MysqlBackupDriver;
+use Tito10047\MigrationBackup\Driver\PostgresBackupDriver;
 use Tito10047\MigrationBackup\Driver\SqliteBackupDriver;
 use Tito10047\MigrationBackup\EventSubscriber\CommandSubscriber;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistry;
@@ -52,7 +53,8 @@ class MigrationBackupBundle extends AbstractBundle {
 				service(StorageProviderInterface::class),
 				service("event_dispatcher"),
 				service(Filesystem::class),
-				$config["backup_path"],
+				$config["keep_last_n_backups"],
+				$config["compress"],
 			]);
 
 		$services->set(MysqlBackupDriver::class)
@@ -60,6 +62,13 @@ class MigrationBackupBundle extends AbstractBundle {
 			->args([
 				service(Filesystem::class),
 				$config["backup_binary"],
+			]);
+
+		$services->set(PostgresBackupDriver::class)
+			->tag("migration_backup.driver")
+			->args([
+				service(Filesystem::class),
+				$config["pg_dump_binary"],
 			]);
 
 		$services->set(SqliteBackupDriver::class)

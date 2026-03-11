@@ -42,6 +42,16 @@ class CommandSubscriberTest extends KernelTestCase{
 		$this->runBackupTest();
 	}
 
+	public function testBackupPostgres(): void {
+		$dbUrl = $_ENV['DATABASE_POSTGRES_URL'] ?? null;
+		if (!$dbUrl || !str_starts_with($dbUrl, 'postgresql')) {
+			$this->markTestSkipped('DATABASE_POSTGRES_URL for postgres not found');
+		}
+
+		self::bootKernel(['db_config' => ['url' => $dbUrl]]);
+		$this->runBackupTest();
+	}
+
 	private function runBackupTest(): void {
 		$application = new Application(self::$kernel);
 		$application->setAutoExit(false);
