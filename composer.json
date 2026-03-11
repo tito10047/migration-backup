@@ -2,7 +2,14 @@
   "name": "tito10047/migration-backup",
   "type": "symfony-bundle",
   "license": "MIT",
-  "description": "Backup database on migrate command",
+  "description": "Symfony bundle that automatically backs up your database (MySQL, PostgreSQL, SQLite) before running migrations. Supports Gzip compression and automatic cleanup.",
+  "authors": [
+    {
+      "name": "Jozef Môstka",
+      "email": "jozef@mostka.sk",
+      "homepage": "https://vsetkosada.sk/en"
+    }
+  ],
   "minimum-stability": "stable",
   "require": {
     "php": ">=8.2",
