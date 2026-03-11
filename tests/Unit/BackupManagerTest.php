@@ -13,6 +13,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Tito10047\MigrationBackup\Event\BackupStartedEvent;
 use Tito10047\MigrationBackup\Event\BackupFinishedEvent;
 use Tito10047\MigrationBackup\Event\BackupFailedEvent;
+use Symfony\Component\Filesystem\Filesystem;
 use Exception;
 
 class BackupManagerTest extends TestCase {
@@ -20,6 +21,7 @@ class BackupManagerTest extends TestCase {
 	private BackupDriverRegistryInterface $driverRegistry;
 	private StorageProviderInterface $storageProvider;
 	private EventDispatcherInterface $eventDispatcher;
+	private Filesystem $fs;
 	private BackupManager $backupManager;
 
 	protected function setUp(): void {
@@ -27,11 +29,13 @@ class BackupManagerTest extends TestCase {
 		$this->driverRegistry     = $this->createMock(BackupDriverRegistryInterface::class);
 		$this->storageProvider    = $this->createMock(StorageProviderInterface::class);
 		$this->eventDispatcher    = $this->createMock(EventDispatcherInterface::class);
+		$this->fs                 = $this->createMock(Filesystem::class);
 		$this->backupManager      = new BackupManager(
 			$this->connectionResolver,
 			$this->driverRegistry,
 			$this->storageProvider,
 			$this->eventDispatcher,
+			$this->fs,
 			'/tmp/backup'
 		);
 	}

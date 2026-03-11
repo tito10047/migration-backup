@@ -2,8 +2,8 @@
 
 namespace Tito10047\MigrationBackup\Driver;
 
-use Exception;
 use Tito10047\MigrationBackup\Dto\ConnectionParams;
+use Tito10047\MigrationBackup\Exception\BackupFailedException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
@@ -34,7 +34,7 @@ class MysqlBackupDriver implements BackupDriverInterface {
 		$process->run();
 
 		if (!$process->isSuccessful()) {
-			throw new Exception('Could not dump database: ' . $process->getErrorOutput());
+			throw new BackupFailedException('Could not dump database: ' . $process->getErrorOutput());
 		}
 
 		$this->fs->dumpFile($outputPath, $process->getOutput());

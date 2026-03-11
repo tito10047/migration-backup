@@ -9,6 +9,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 use Tito10047\MigrationBackup\Event\BackupStartedEvent;
 use Tito10047\MigrationBackup\Event\BackupFinishedEvent;
 use Tito10047\MigrationBackup\Event\BackupFailedEvent;
+use Symfony\Component\Filesystem\Filesystem;
 use Throwable;
 
 class BackupManager {
@@ -17,6 +18,7 @@ class BackupManager {
 		private readonly BackupDriverRegistryInterface $driverRegistry,
 		private readonly StorageProviderInterface      $storageProvider,
 		private readonly EventDispatcherInterface      $eventDispatcher,
+		private readonly Filesystem                    $fs,
 		private readonly string                        $backupPath,
 	) {}
 
@@ -24,6 +26,10 @@ class BackupManager {
 		$this->eventDispatcher->dispatch(new BackupStartedEvent($connectionName));
 
 		try {
+			if (!$this->fs->exists($this->backupPath)) {
+				$this->fs->mkdir($this->backupPath);
+			}
+
 			$params = $this->connectionResolver->resolve($connectionName);
 			$driver = $this->driverRegistry->getDriver($params->driver);
 

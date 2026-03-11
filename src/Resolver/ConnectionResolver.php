@@ -22,6 +22,7 @@ class ConnectionResolver implements ConnectionResolverInterface {
 			(string)($params['user'] ?? ''),
 			(string)($params['password'] ?? ''),
 			(string)($params['driver'] ?? ''),
+			isset($params['path']) ? (string)$params['path'] : null,
 		);
 	}
 }

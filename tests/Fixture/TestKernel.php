@@ -27,19 +27,31 @@ class TestKernel extends Kernel
 	}
 
 
-	private function configureContainer(ContainerConfigurator $container, LoaderInterface $loader, ContainerBuilder $builder): void {
+	protected function configureContainer(ContainerConfigurator $container, LoaderInterface $loader, ContainerBuilder $builder): void {
 		$builder->loadFromExtension('framework', [
 			'test' => true,
 		]);
-		$builder->loadFromExtension('doctrine', [
+		$container->extension('migration_backup', []);
+		$container->extension('doctrine', [
 			'dbal' => [
 				'url' => 'sqlite:///%kernel.project_dir%/var/data.db',
 			]
 		]);
-		$builder->loadFromExtension('doctrine_migrations', [
+		$container->extension('doctrine_migrations', [
 			"enable_profiler" => false,
 			"organize_migrations" => 'BY_YEAR_AND_MONTH'
 		]);
+	}
+
+	public function boot(): void {
+		parent::boot();
+		$dbPath = $this->getProjectDir() . '/var/data.db';
+		if (!file_exists(dirname($dbPath))) {
+			mkdir(dirname($dbPath), 0777, true);
+		}
+		if (!file_exists($dbPath)) {
+			touch($dbPath);
+		}
 	}
 }
 

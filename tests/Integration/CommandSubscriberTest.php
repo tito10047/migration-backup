@@ -17,21 +17,20 @@ use Symfony\Component\Console\Tester\CommandTester;
 class CommandSubscriberTest extends KernelTestCase{
 
 	public function testBackup():void {
-
 		self::bootKernel();
 		$application = new Application(self::$kernel);
+		$application->setAutoExit(false);
 
 		$commandName = 'doctrine:migrations:migrate';
 
-		$foundCommand = $application->find($commandName);
+		$tester = new \Symfony\Component\Console\Tester\ApplicationTester($application);
 
-		$tester = new CommandTester($foundCommand);
-
-		$tester->execute([
+		$response = $tester->run([
 			'command' => $commandName,
 			'--backup' => true,
+			'--no-interaction' => true,
 		]);
-
+		$this->assertStringContainsString('Backup of database default created in', $tester->getDisplay());
 	}
 
 }

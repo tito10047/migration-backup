@@ -9,6 +9,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Tito10047\MigrationBackup\BackupManager;
 use Tito10047\MigrationBackup\Driver\MysqlBackupDriver;
+use Tito10047\MigrationBackup\Driver\SqliteBackupDriver;
 use Tito10047\MigrationBackup\EventSubscriber\CommandSubscriber;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistry;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistryInterface;
@@ -30,6 +31,8 @@ class MigrationBackupBundle extends AbstractBundle {
 	public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void {
 		$services = $container->services();
 
+		$services->set(Filesystem::class);
+
 		$services->set(ConnectionResolverInterface::class, ConnectionResolver::class)
 			->args([service("doctrine")]);
 
@@ -48,10 +51,15 @@ class MigrationBackupBundle extends AbstractBundle {
 				service(BackupDriverRegistryInterface::class),
 				service(StorageProviderInterface::class),
 				service("event_dispatcher"),
+				service(Filesystem::class),
 				$config["backup_path"],
 			]);
 
 		$services->set(MysqlBackupDriver::class)
+			->tag("migration_backup.driver")
+			->args([service(Filesystem::class)]);
+
+		$services->set(SqliteBackupDriver::class)
 			->tag("migration_backup.driver")
 			->args([service(Filesystem::class)]);
 

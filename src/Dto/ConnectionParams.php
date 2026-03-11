@@ -10,5 +10,6 @@ final readonly class ConnectionParams {
 		public string $user,
 		public string $password,
 		public string $driver,
+		public ?string $path = null,
 	) {}
 }
