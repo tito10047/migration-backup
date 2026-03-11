@@ -57,7 +57,10 @@ class MigrationBackupBundle extends AbstractBundle {
 
 		$services->set(MysqlBackupDriver::class)
 			->tag("migration_backup.driver")
-			->args([service(Filesystem::class)]);
+			->args([
+				service(Filesystem::class),
+				$config["backup_binary"],
+			]);
 
 		$services->set(SqliteBackupDriver::class)
 			->tag("migration_backup.driver")

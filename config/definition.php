@@ -10,6 +10,7 @@ return static function (DefinitionConfigurator $definition): void {
 		->rootNode()
 		->children()
 		->scalarNode('backup_path')->defaultValue('%kernel.project_dir%/backup')->end()
+		->scalarNode('backup_binary')->defaultValue('mysqldump')->end()
 		->arrayNode("database")->defaultValue(["default"])->scalarPrototype()->end()->end()
 		->end()
 		->end();
