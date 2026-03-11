@@ -5,3 +5,4 @@ composer.lock
 /var
 /tests/App/migration_backup
 .env.test.local
+/backup/

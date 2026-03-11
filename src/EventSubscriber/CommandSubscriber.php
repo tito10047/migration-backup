@@ -8,34 +8,19 @@
 
 namespace Tito10047\MigrationBackup\EventSubscriber;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
-use Exception;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleCommandEvent;
-use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\Input;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Process\Process;
+use Tito10047\MigrationBackup\BackupManager;
 
 class CommandSubscriber implements EventSubscriberInterface {
 
-
-	/**
-	 * @var Connection
-	 */
-	private $conn;
-	private $commands = [];
-
 	public function __construct(
-		private readonly Filesystem      $fs,
-		private readonly ManagerRegistry $registry,
-		private readonly string          $backupPath,
-		private readonly array           $databases,
+		private readonly BackupManager $backupManager,
+		private readonly array         $databases,
 	) {}
-
 
 	public static function getSubscribedEvents(): array {
 		return [
@@ -53,55 +38,20 @@ class CommandSubscriber implements EventSubscriberInterface {
 		}
 
 		// add --backup option to command definition
-        if (!$command->getDefinition()->hasOption('backup')) {
-		    $command->addOption('backup', 'b', InputOption::VALUE_OPTIONAL, 'Backup database before migration', false);
-        }
+		if (!$command->getDefinition()->hasOption('backup')) {
+			$command->addOption('backup', 'b', InputOption::VALUE_OPTIONAL, 'Backup database before migration', false);
+		}
 
-		$input          = $event->getInput();
+		$input = $event->getInput();
 		assert($input instanceof Input);
-        if (!$input->hasParameterOption('--backup')) {
+		if (!$input->hasParameterOption('--backup')) {
 			return;
 		}
 
-        $io = $event->getOutput();
+		$io = $event->getOutput();
 		foreach ($this->databases as $database) {
-			$params   = $this->registry->getConnection($database)->getParams();
-			$filename = $this->backupPath . '/' . $database . '-' . date('Y-m-d-H-i-s') . '.sql';
-			$this->dumpDatabase(
-				$params['host'],
-				$params['port'],
-				$params['dbname'],
-				$params['user'],
-				$params['password'],
-				$filename
-			);
-            $io->writeln('Backup of database ' . $database . ' created in ' . $filename);
-
+			$path = $this->backupManager->backup($database);
+			$io->writeln('Backup of database ' . $database . ' created in ' . $path);
 		}
 	}
-
-
-	private function dumpDatabase(string $host, string $port, string $database, string $username, string $password, string $path): void {
-		$cmd = [
-			'mysqldump',
-			'-h', $host,
-			'-P', $port,
-			'-B', $database,
-			'-u', $username,
-			'--hex-blob',
-		];
-
-		$process = new Process($cmd, null, [
-			'MYSQL_PWD' => $password,
-		]);
-
-		$process->run();
-
-		if (!$process->isSuccessful()) {
-			throw new Exception('Could not dump database: ' . $process->getErrorOutput());
-		}
-
-		$this->fs->dumpFile($path, $process->getOutput());
-	}
-
 }
