@@ -4,13 +4,13 @@ on:
   pull_request:
   push:
   schedule:
-    - cron: '* 8 * * *'
+    - cron: '0 16 * * *'
 
 jobs:
   compatibility:
     services:
       mysql:
-        image: mysql:latest
+        image: mysql:8.0
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: false
           MYSQL_ROOT_PASSWORD: symfony
@@ -28,7 +28,6 @@ jobs:
           - "8.2"
           - "8.3"
           - "8.4"
-          - "8.5"
         symfony:
           - '6.4.*'
           - '7.4.*'
@@ -40,10 +39,8 @@ jobs:
         exclude:
           -   php-version: "8.2"
               symfony: '8.0.*'
-              operating-system: "ubuntu-latest"
           -   php-version: "8.3"
               symfony: '8.0.*'
-              operating-system: "ubuntu-latest"
         operating-system:
           - "ubuntu-latest"
 
@@ -56,8 +53,11 @@ jobs:
         with:
           coverage: "pcov"
           php-version: "${{ matrix.php-version }}"
-          extensions: pdo_sqlite, mysql
+          extensions: pdo_sqlite, pdo_mysql
           ini-values: memory_limit=-1
+
+      - name: Stop pre-installed MySQL
+        run: sudo /etc/init.d/mysql stop
 
 
       - name: Configure Symfony

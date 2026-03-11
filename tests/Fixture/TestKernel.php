@@ -19,6 +19,15 @@ class TestKernel extends Kernel
 {
 	use MicroKernelTrait;
 
+	private array $dbConfig;
+
+	public function __construct(string $environment, bool $debug, array $dbConfig = []) {
+		parent::__construct($environment, $debug);
+		$this->dbConfig = $dbConfig ?: [
+			'url' => 'sqlite:///%kernel.project_dir%/var/data.db',
+		];
+	}
+
 	public function registerBundles(): iterable {
 		yield new \Symfony\Bundle\FrameworkBundle\FrameworkBundle();
 		yield new \Doctrine\Bundle\DoctrineBundle\DoctrineBundle();
@@ -33,9 +42,7 @@ class TestKernel extends Kernel
 		]);
 		$container->extension('migration_backup', []);
 		$container->extension('doctrine', [
-			'dbal' => [
-				'url' => 'sqlite:///%kernel.project_dir%/var/data.db',
-			]
+			'dbal' => $this->dbConfig
 		]);
 		$container->extension('doctrine_migrations', [
 			"enable_profiler" => false,
@@ -45,12 +52,14 @@ class TestKernel extends Kernel
 
 	public function boot(): void {
 		parent::boot();
-		$dbPath = $this->getProjectDir() . '/var/data.db';
-		if (!file_exists(dirname($dbPath))) {
-			mkdir(dirname($dbPath), 0777, true);
-		}
-		if (!file_exists($dbPath)) {
-			touch($dbPath);
+		if (isset($this->dbConfig['url']) && str_starts_with($this->dbConfig['url'], 'sqlite:')) {
+			$dbPath = str_replace('sqlite:///%kernel.project_dir%', $this->getProjectDir(), $this->dbConfig['url']);
+			if (!file_exists(dirname($dbPath))) {
+				mkdir(dirname($dbPath), 0777, true);
+			}
+			if (!file_exists($dbPath)) {
+				touch($dbPath);
+			}
 		}
 	}
 }
