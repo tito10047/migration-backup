@@ -25,7 +25,7 @@ class CommandSubscriberTest extends KernelTestCase{
 	}
 
 	public function testBackupMysql(): void {
-		$dbUrl = $_ENV['DATABASE_URL'] ?? null;
+		$dbUrl = $_SERVER['DATABASE_URL'] ?? $_ENV['DATABASE_URL'] ?? null;
 		if (!$dbUrl || !str_starts_with($dbUrl, 'mysql')) {
 			$this->markTestSkipped('DATABASE_URL for mysql not found');
 		}
@@ -35,7 +35,7 @@ class CommandSubscriberTest extends KernelTestCase{
 	}
 
 	public function testBackupPostgres(): void {
-		$dbUrl = $_ENV['DATABASE_POSTGRES_URL'] ?? null;
+		$dbUrl = $_SERVER['DATABASE_POSTGRES_URL'] ?? $_ENV['DATABASE_POSTGRES_URL'] ?? null;
 		if (!$dbUrl || !str_starts_with($dbUrl, 'postgresql')) {
 			$this->markTestSkipped('DATABASE_POSTGRES_URL for postgres not found');
 		}

@@ -16,7 +16,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: symfony
           MYSQL_DATABASE: symfony_test
         ports:
-          - 3306/tcp
+          - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
       postgres:
         image: postgres:15
@@ -24,7 +24,7 @@ jobs:
           POSTGRES_PASSWORD: symfony
           POSTGRES_DB: symfony_test
         ports:
-          - 5432/tcp
+          - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
     name: "Tests"
 
@@ -92,8 +92,8 @@ jobs:
 
       - name: Execute tests (Unit and Feature tests) via PHPUnit
         env:
-          DATABASE_URL: mysql://root:symfony@127.0.0.1:${{ job.services.mysql.ports['3306'] }}/symfony_test
-          DATABASE_POSTGRES_URL: postgresql://postgres:symfony@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/symfony_test
+          DATABASE_URL: mysql://root:symfony@127.0.0.1:3306/symfony_test
+          DATABASE_POSTGRES_URL: postgresql://postgres:symfony@127.0.0.1:5432/symfony_test
         run: vendor/bin/phpunit --coverage-clover build/reports/clover.xml
 
       - name: Upload coverage results to Coveralls
