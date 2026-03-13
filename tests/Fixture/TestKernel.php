@@ -40,7 +40,10 @@ class TestKernel extends Kernel
 		$builder->loadFromExtension('framework', [
 			'test' => true,
 		]);
-		$container->extension('migration_backup', []);
+		$container->extension('migration_backup', [
+			'compress' => true,
+			'compression_format' => 'gzip'
+		]);
 		$container->extension('doctrine', [
 			'dbal' => $this->dbConfig
 		]);

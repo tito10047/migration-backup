@@ -8,6 +8,13 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 use Tito10047\MigrationBackup\BackupManager;
+use Tito10047\MigrationBackup\Compressor\Bzip2Compressor;
+use Tito10047\MigrationBackup\Compressor\CompressorInterface;
+use Tito10047\MigrationBackup\Compressor\GzipCompressor;
+use Tito10047\MigrationBackup\Compressor\Lz4Compressor;
+use Tito10047\MigrationBackup\Compressor\NoneCompressor;
+use Tito10047\MigrationBackup\Compressor\ZipCompressor;
+use Tito10047\MigrationBackup\Compressor\ZstdCompressor;
 use Tito10047\MigrationBackup\Driver\MysqlBackupDriver;
 use Tito10047\MigrationBackup\Driver\PostgresBackupDriver;
 use Tito10047\MigrationBackup\Driver\SqliteBackupDriver;
@@ -46,11 +53,42 @@ class MigrationBackupBundle extends AbstractBundle {
 				$config["backup_path"],
 			]);
 
+		$services->set(GzipCompressor::class)
+			->args([service(Filesystem::class)]);
+
+		$services->set(Bzip2Compressor::class)
+			->args([service(Filesystem::class)]);
+
+		$services->set(ZstdCompressor::class)
+			->args([service(Filesystem::class)]);
+
+		$services->set(ZipCompressor::class)
+			->args([service(Filesystem::class)]);
+
+		$services->set(Lz4Compressor::class)
+			->args([service(Filesystem::class)]);
+
+		$services->set(NoneCompressor::class);
+
+		$compressorClass = match ($config['compression_format']) {
+			'gzip' => GzipCompressor::class,
+			'bzip2' => Bzip2Compressor::class,
+			'zstd' => ZstdCompressor::class,
+			'zip' => ZipCompressor::class,
+			'lz4' => Lz4Compressor::class,
+			default => NoneCompressor::class,
+		};
+
+		if (!$builder->hasDefinition('migration_backup.compressor') && !$builder->hasAlias('migration_backup.compressor')) {
+			$services->alias('migration_backup.compressor', $compressorClass);
+		}
+
 		$services->set(BackupManager::class)
 			->args([
 				service(ConnectionResolverInterface::class),
 				service(BackupDriverRegistryInterface::class),
 				service(StorageProviderInterface::class),
+				service('migration_backup.compressor'),
 				service("event_dispatcher"),
 				service(Filesystem::class),
 				$config["keep_last_n_backups"],

@@ -15,6 +15,7 @@ return static function (DefinitionConfigurator $definition): void {
 		->arrayNode("database")->defaultValue(["default"])->scalarPrototype()->end()->end()
 		->integerNode('keep_last_n_backups')->defaultValue(0)->info('Number of backups to keep. 0 means keep all.')->end()
 		->booleanNode('compress')->defaultFalse()->info('Compress backup with gzip.')->end()
+		->scalarNode('compression_format')->defaultValue('gzip')->info('Compression format to use (gzip, bzip2, zstd, zip, lz4, none).')->end()
 		->end()
 		->end();
 };

@@ -28,7 +28,8 @@
     "symfony/dotenv": "^6.4|^7.4|^8.0",
     "symfony/framework-bundle": "^6.4|^7.4|^8.0",
     "symfony/phpunit-bridge": "^6.4|^7.4|^8.0",
-    "symfony/yaml": "^6.4|^7.4|^8.0"
+    "symfony/yaml": "^6.4|^7.4|^8.0",
+    "ext-zlib": "*"
   },
   "config": {
     "sort-packages": true,
