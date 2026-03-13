@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.2-8892bf.svg)](https://php.net)
 [![Symfony Version](https://img.shields.io/badge/Symfony-%3E%3D%206.4-black?logo=symfony)](https://symfony.com/)
-[![Coverage Status](https://coveralls.io/repos/github/tito10047/migration-backup/badge.svg?branch=v2)](https://coveralls.io/github/tito10047/migration-backup?branch=v2)
+[![Coverage Status](https://coveralls.io/repos/github/tito10047/migration-backup/badge.svg?branch=v2)](https://coveralls.io/github/tito10047/migration-backup)
 
 ### Did you run a migration and it "crashed" in the middle? Welcome to hell. 🔥
 
