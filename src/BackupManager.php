@@ -2,6 +2,7 @@
 
 namespace Tito10047\MigrationBackup;
 
+use Tito10047\MigrationBackup\Compressor\CompressorInterface;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistryInterface;
 use Tito10047\MigrationBackup\Resolver\ConnectionResolverInterface;
 use Tito10047\MigrationBackup\Storage\StorageProviderInterface;
@@ -17,6 +18,7 @@ class BackupManager {
 		private readonly ConnectionResolverInterface   $connectionResolver,
 		private readonly BackupDriverRegistryInterface $driverRegistry,
 		private readonly StorageProviderInterface      $storageProvider,
+		private readonly CompressorInterface           $compressor,
 		private readonly EventDispatcherInterface      $eventDispatcher,
 		private readonly Filesystem                    $fs,
 		private readonly int                           $keepLastN = 0,
@@ -31,14 +33,18 @@ class BackupManager {
 			$params = $this->connectionResolver->resolve($connectionName);
 			$driver = $this->driverRegistry->getDriver($params->driver);
 
-			$extension = $this->compress ? '.sql.gz' : '.sql';
-			$filename  = $connectionName . '-' . date('Y-m-d-H-i-s') . $extension;
-			$tempPath  = tempnam(sys_get_temp_dir(), 'mb_');
+			$extension = '.sql';
+			if ($this->compress) {
+				$extension .= $this->compressor->getExtension();
+			}
+
+			$filename = $connectionName . '-' . date('Y-m-d-H-i-s') . $extension;
+			$tempPath = tempnam(sys_get_temp_dir(), 'mb_');
 
 			$driver->dump($params, $tempPath);
 
 			if ($this->compress) {
-				$this->compressFile($tempPath);
+				$this->compressor->compress($tempPath);
 			}
 
 			$storedPath = $this->storageProvider->store($tempPath, $filename);
@@ -56,28 +62,5 @@ class BackupManager {
 				$this->fs->remove($tempPath);
 			}
 		}
-	}
-
-	private function compressFile(string $path): void {
-		$gzPath = $path . '.gz';
-		$fp     = gzopen($gzPath, 'w9');
-		if (!$fp) {
-			throw new \RuntimeException('Could not open file for compression: ' . $gzPath);
-		}
-
-		$handle = fopen($path, 'rb');
-		if (!$handle) {
-			gzclose($fp);
-			throw new \RuntimeException('Could not open file for reading: ' . $path);
-		}
-
-		while (!feof($handle)) {
-			gzwrite($fp, fread($handle, 1024 * 512));
-		}
-
-		fclose($handle);
-		gzclose($fp);
-
-		$this->fs->rename($gzPath, $path, true);
 	}
 }

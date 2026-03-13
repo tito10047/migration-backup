@@ -4,6 +4,7 @@ namespace Tito10047\MigrationBackup\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use Tito10047\MigrationBackup\BackupManager;
+use Tito10047\MigrationBackup\Compressor\CompressorInterface;
 use Tito10047\MigrationBackup\Driver\BackupDriverInterface;
 use Tito10047\MigrationBackup\Dto\ConnectionParams;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistryInterface;
@@ -20,6 +21,7 @@ class BackupManagerTest extends TestCase {
 	private ConnectionResolverInterface $connectionResolver;
 	private BackupDriverRegistryInterface $driverRegistry;
 	private StorageProviderInterface $storageProvider;
+	private CompressorInterface $compressor;
 	private EventDispatcherInterface $eventDispatcher;
 	private Filesystem $fs;
 	private BackupManager $backupManager;
@@ -28,12 +30,14 @@ class BackupManagerTest extends TestCase {
 		$this->connectionResolver = $this->createMock(ConnectionResolverInterface::class);
 		$this->driverRegistry     = $this->createMock(BackupDriverRegistryInterface::class);
 		$this->storageProvider    = $this->createMock(StorageProviderInterface::class);
+		$this->compressor         = $this->createMock(CompressorInterface::class);
 		$this->eventDispatcher    = $this->createMock(EventDispatcherInterface::class);
 		$this->fs                 = $this->createMock(Filesystem::class);
 		$this->backupManager      = new BackupManager(
 			$this->connectionResolver,
 			$this->driverRegistry,
 			$this->storageProvider,
+			$this->compressor,
 			$this->eventDispatcher,
 			$this->fs,
 			0

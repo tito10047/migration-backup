@@ -60,7 +60,7 @@ jobs:
         uses: "shivammathur/setup-php@v2"
         with:
           php-version: "${{ matrix.php-version }}"
-          extensions: pdo_sqlite, pdo_mysql, pdo_pgsql
+          extensions: pdo_sqlite, pdo_mysql, pdo_pgsql, zlib, bz2, zip, zstd, lz4
           ini-values: memory_limit=-1
           coverage: pcov
 
@@ -92,8 +92,8 @@ jobs:
 
       - name: Execute tests (Unit and Feature tests) via PHPUnit
         env:
-          DATABASE_URL: mysql://root:symfony@127.0.0.1:3306/symfony_test
-          DATABASE_POSTGRES_URL: postgresql://postgres:symfony@127.0.0.1:5432/symfony_test
+          DATABASE_URL: mysql://root:symfony@127.0.0.1:3306/symfony_test?serverVersion=8.0
+          DATABASE_POSTGRES_URL: postgresql://postgres:symfony@127.0.0.1:5432/symfony_test?serverVersion=15.0
         run: vendor/bin/phpunit --coverage-clover build/reports/clover.xml
 
       - name: Upload coverage results to Coveralls

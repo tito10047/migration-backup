@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.2-8892bf.svg)](https://php.net)
 [![Symfony Version](https://img.shields.io/badge/Symfony-%3E%3D%206.4-black?logo=symfony)](https://symfony.com/)
-[![Coverage Status](https://coveralls.io/repos/github/tito10047/migration-backup/badge.svg?branch=v2)](https://coveralls.io/github/tito10047/migration-backup?branch=v2)
+[![Coverage Status](https://coveralls.io/repos/github/tito10047/migration-backup/badge.svg?branch=v2)](https://coveralls.io/github/tito10047/migration-backup)
 
 ### Did you run a migration and it "crashed" in the middle? Welcome to hell. 🔥
 
@@ -15,8 +15,9 @@ You know the drill: you run `doctrine:migrations:migrate`, the third command out
 ## ✨ Features
 
 - 🚀 **Automatic backup** before running migrations.
-- 🗜️ **Gzip compression** for drastic reduction in backup file size.
+- 🗜️ **Compression support**: Multi-format support (Gzip, Bzip2, Zstandard, Zip, LZ4) to reduce backup size.
 - 🧹 **Automatic Cleanup**: Keep e.g. only the last 10 backups and save space.
+- 🧩 **Extensible**: Easily add your own custom compressor.
 - 🐘 **Multi-DB support**: Full support for **MySQL**, **PostgreSQL**, and **SQLite**.
 - 🔔 **Events**: Ability to hook into your own logic (Slack notifications, logging, etc.).
 
@@ -43,8 +44,12 @@ migration_backup:
     # How many last backups to keep (0 = all)
     keep_last_n_backups: 5
     
-    # Should the backup be compressed using gzip?
+    # Should the backup be compressed?
     compress: true
+
+    # Compression format to use (default: gzip)
+    # Available options: gzip, bzip2, zstd, zip, lz4, none
+    compression_format: 'gzip'
 
     # Paths to binaries (if not available globally in PATH)
     backup_binary: 'mysqldump'    # For MySQL
@@ -63,6 +68,39 @@ php bin/console doctrine:migrations:migrate --backup
 
 The console output will inform you of the success:
 `Backup of database default created in /your/project/var/backups/default-2024-03-11-15-55-01.sql.gz`
+
+## 🗜️ Compression
+
+The bundle supports several compression formats. Each format requires its corresponding PHP extension to be installed:
+
+| Format | Extension | File Extension | Recommendation |
+| --- | --- | --- | --- |
+| **Gzip** | `zlib` | `.gz` | Standard, well-balanced. |
+| **Bzip2** | `bz2` | `.bz2` | Better compression ratio, slower. |
+| **Zstandard** | `zstd` | `.zst` | Modern, fast with great compression. |
+| **Zip** | `zip` | `.zip` | Highly compatible across OS. |
+| **LZ4** | `lz4` | `.lz4` | Extremely fast compression. |
+| **None** | - | - | No compression. |
+
+If the required extension is missing, the bundle will throw a `RuntimeException` when attempting to use that format.
+
+### Custom Compressor
+
+You can implement your own compression logic by creating a class that implements `Tito10047\MigrationBackup\Compressor\CompressorInterface`.
+
+Then, register your service and alias the `migration_backup.compressor` to it:
+
+```yaml
+# config/services.yaml
+services:
+    App\Backup\MyCustomCompressor:
+        arguments: ['@symfony_filesystem_service']
+
+    migration_backup.compressor:
+        alias: App\Backup\MyCustomCompressor
+```
+
+Note: If you override the `migration_backup.compressor` service, the `compression_format` setting in `migration_backup.yaml` will be ignored. It's cleaner to set it to `none` to avoid confusion.
 
 ## 🛠️ Supported Databases
 
