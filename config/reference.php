@@ -950,7 +950,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     database?: list<scalar|null|Param>,
  *     keep_last_n_backups?: int|Param, // Number of backups to keep. 0 means keep all. // Default: 0
  *     compress?: bool|Param, // Compress backup with gzip. // Default: false
- *     compression_format?: scalar|null|Param, // Compression format to use (gzip, bzip2, zstd, zip, lz4, none). // Default: "gzip"
+ *     compression_format?: "gzip"|"bzip2"|"zstd"|"zip"|"lz4"|"none"|Param, // Compression format to use (gzip, bzip2, zstd, zip, lz4, none). // Default: "gzip"
  * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,

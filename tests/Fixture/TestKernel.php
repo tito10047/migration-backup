@@ -20,12 +20,17 @@ class TestKernel extends Kernel
 	use MicroKernelTrait;
 
 	private array $dbConfig;
+	private array $migrationBackupConfig;
 
-	public function __construct(string $environment, bool $debug, array $dbConfig = []) {
+	private string $cacheHash;
+
+	public function __construct(string $environment, bool $debug, array $dbConfig = [], array $migrationBackupConfig = []) {
 		parent::__construct($environment, $debug);
 		$this->dbConfig = $dbConfig ?: [
 			'url' => 'sqlite:///%kernel.project_dir%/var/data.db',
 		];
+		$this->migrationBackupConfig = $migrationBackupConfig;
+		$this->cacheHash             = md5(serialize([$this->dbConfig, $this->migrationBackupConfig]));
 	}
 
 	public function registerBundles(): iterable {
@@ -40,10 +45,10 @@ class TestKernel extends Kernel
 		$builder->loadFromExtension('framework', [
 			'test' => true,
 		]);
-		$container->extension('migration_backup', [
+		$container->extension('migration_backup', array_merge([
 			'compress' => true,
 			'compression_format' => 'gzip'
-		]);
+		], $this->migrationBackupConfig));
 		$container->extension('doctrine', [
 			'dbal' => $this->dbConfig
 		]);
@@ -51,6 +56,10 @@ class TestKernel extends Kernel
 			"enable_profiler" => false,
 			"organize_migrations" => 'BY_YEAR_AND_MONTH'
 		]);
+	}
+
+	public function getCacheDir(): string {
+		return parent::getCacheDir() . '/' . $this->cacheHash;
 	}
 
 	public function boot(): void {
