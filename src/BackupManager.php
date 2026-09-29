@@ -2,7 +2,9 @@
 
 namespace Tito10047\MigrationBackup;
 
+use DateTimeImmutable;
 use Tito10047\MigrationBackup\Compressor\CompressorInterface;
+use Tito10047\MigrationBackup\Dto\BackupFile;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistryInterface;
 use Tito10047\MigrationBackup\Resolver\ConnectionResolverInterface;
 use Tito10047\MigrationBackup\Storage\StorageProviderInterface;
@@ -33,12 +35,9 @@ class BackupManager {
 			$params = $this->connectionResolver->resolve($connectionName);
 			$driver = $this->driverRegistry->getDriver($params->driver);
 
-			$extension = '.sql';
-			if ($this->compress) {
-				$extension .= $this->compressor->getExtension();
-			}
+			$extension = $this->compress ? $this->compressor->getExtension() : '';
 
-			$filename = $connectionName . '-' . date('Y-m-d-H-i-s') . $extension;
+			$filename = BackupFile::buildFilename($connectionName, new DateTimeImmutable(), $extension);
 			$tempPath = tempnam(sys_get_temp_dir(), 'mb_');
 
 			$driver->dump($params, $tempPath);

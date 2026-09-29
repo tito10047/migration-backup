@@ -6,7 +6,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use RuntimeException;
 use ZipArchive;
 
-class ZipCompressor implements CompressorInterface {
+class ZipCompressor implements CompressorInterface, DecompressorInterface {
 	public function __construct(
 		private readonly Filesystem $fs
 	) {}
@@ -27,6 +27,33 @@ class ZipCompressor implements CompressorInterface {
 
 		$this->fs->remove($path);
 		$this->fs->rename($zipPath, $path);
+
+		return $path;
+	}
+
+	public function decompress(string $path): string {
+		if (!$this->isAvailable()) {
+			throw new RuntimeException('Zip compression is not available (zip extension missing).');
+		}
+
+		$zip = new ZipArchive();
+		if ($zip->open($path) !== true) {
+			throw new RuntimeException('Could not open file for decompression: ' . $path);
+		}
+
+		if ($zip->numFiles === 0) {
+			$zip->close();
+			throw new RuntimeException('Zip archive is empty: ' . $path);
+		}
+
+		$content = $zip->getFromIndex(0);
+		$zip->close();
+
+		if ($content === false) {
+			throw new RuntimeException('Could not read the archive entry of: ' . $path);
+		}
+
+		$this->fs->dumpFile($path, $content);
 
 		return $path;
 	}
