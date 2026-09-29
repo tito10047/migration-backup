@@ -5,7 +5,7 @@ namespace Tito10047\MigrationBackup\Compressor;
 use Symfony\Component\Filesystem\Filesystem;
 use RuntimeException;
 
-class ZstdCompressor implements CompressorInterface {
+class ZstdCompressor implements CompressorInterface, DecompressorInterface {
 	public function __construct(
 		private readonly Filesystem $fs
 	) {}
@@ -26,6 +26,26 @@ class ZstdCompressor implements CompressorInterface {
 		}
 
 		$this->fs->dumpFile($path, $compressed);
+
+		return $path;
+	}
+
+	public function decompress(string $path): string {
+		if (!$this->isAvailable()) {
+			throw new RuntimeException('Zstd compression is not available (zstd extension missing).');
+		}
+
+		$data = file_get_contents($path);
+		if ($data === false) {
+			throw new RuntimeException('Could not read file for decompression: ' . $path);
+		}
+
+		$plain = zstd_uncompress($data);
+		if ($plain === false) {
+			throw new RuntimeException('Zstd decompression failed for file: ' . $path);
+		}
+
+		$this->fs->dumpFile($path, $plain);
 
 		return $path;
 	}

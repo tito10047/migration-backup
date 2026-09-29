@@ -5,7 +5,7 @@ namespace Tito10047\MigrationBackup\Compressor;
 use Symfony\Component\Filesystem\Filesystem;
 use RuntimeException;
 
-class Lz4Compressor implements CompressorInterface {
+class Lz4Compressor implements CompressorInterface, DecompressorInterface {
 	public function __construct(
 		private readonly Filesystem $fs
 	) {}
@@ -26,6 +26,26 @@ class Lz4Compressor implements CompressorInterface {
 		}
 
 		$this->fs->dumpFile($path, $compressed);
+
+		return $path;
+	}
+
+	public function decompress(string $path): string {
+		if (!$this->isAvailable()) {
+			throw new RuntimeException('LZ4 compression is not available (lz4 extension missing).');
+		}
+
+		$data = file_get_contents($path);
+		if ($data === false) {
+			throw new RuntimeException('Could not read file for decompression: ' . $path);
+		}
+
+		$plain = lz4_uncompress($data);
+		if ($plain === false) {
+			throw new RuntimeException('LZ4 decompression failed for file: ' . $path);
+		}
+
+		$this->fs->dumpFile($path, $plain);
 
 		return $path;
 	}

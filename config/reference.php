@@ -895,6 +895,8 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     backup_path?: scalar|Param|null, // Default: "%kernel.project_dir%/backup"
  *     backup_binary?: scalar|Param|null, // Default: "mysqldump"
  *     pg_dump_binary?: scalar|Param|null, // Default: "pg_dump"
+ *     mysql_binary?: scalar|Param|null, // MySQL client used for restoring. // Default: "mysql"
+ *     psql_binary?: scalar|Param|null, // PostgreSQL client used for restoring. // Default: "psql"
  *     database?: list<scalar|Param|null>,
  *     keep_last_n_backups?: int|Param, // Number of backups to keep. 0 means keep all. // Default: 0
  *     compress?: bool|Param, // Compress backup with gzip. // Default: false

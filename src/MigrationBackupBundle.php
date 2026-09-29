@@ -7,7 +7,12 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use Tito10047\MigrationBackup\BackupCleaner;
 use Tito10047\MigrationBackup\BackupManager;
+use Tito10047\MigrationBackup\Command\BackupCommand;
+use Tito10047\MigrationBackup\Command\CleanBackupsCommand;
+use Tito10047\MigrationBackup\Command\ListBackupsCommand;
+use Tito10047\MigrationBackup\Command\RestoreCommand;
 use Tito10047\MigrationBackup\Compressor\Bzip2Compressor;
 use Tito10047\MigrationBackup\Compressor\CompressorInterface;
 use Tito10047\MigrationBackup\Compressor\GzipCompressor;
@@ -16,13 +21,21 @@ use Tito10047\MigrationBackup\Compressor\NoneCompressor;
 use Tito10047\MigrationBackup\Compressor\ZipCompressor;
 use Tito10047\MigrationBackup\Compressor\ZstdCompressor;
 use Tito10047\MigrationBackup\Driver\MysqlBackupDriver;
+use Tito10047\MigrationBackup\Driver\MysqlRestoreDriver;
 use Tito10047\MigrationBackup\Driver\PostgresBackupDriver;
+use Tito10047\MigrationBackup\Driver\PostgresRestoreDriver;
 use Tito10047\MigrationBackup\Driver\SqliteBackupDriver;
+use Tito10047\MigrationBackup\Driver\SqliteRestoreDriver;
 use Tito10047\MigrationBackup\EventSubscriber\CommandSubscriber;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistry;
 use Tito10047\MigrationBackup\Registry\BackupDriverRegistryInterface;
+use Tito10047\MigrationBackup\Registry\DecompressorRegistry;
+use Tito10047\MigrationBackup\Registry\DecompressorRegistryInterface;
+use Tito10047\MigrationBackup\Registry\RestoreDriverRegistry;
+use Tito10047\MigrationBackup\Registry\RestoreDriverRegistryInterface;
 use Tito10047\MigrationBackup\Resolver\ConnectionResolver;
 use Tito10047\MigrationBackup\Resolver\ConnectionResolverInterface;
+use Tito10047\MigrationBackup\Storage\ListableStorageProviderInterface;
 use Tito10047\MigrationBackup\Storage\LocalStorageProvider;
 use Tito10047\MigrationBackup\Storage\StorageProviderInterface;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
@@ -53,22 +66,33 @@ class MigrationBackupBundle extends AbstractBundle {
 				$config["backup_path"],
 			]);
 
+		// Listing, cleaning and restoring need a storage that can be browsed. A
+		// project that replaces the storage provider with its own one has to make
+		// it listable as well, or these features stay unavailable to it.
+		$services->alias(ListableStorageProviderInterface::class, StorageProviderInterface::class);
+
 		$services->set(GzipCompressor::class)
+			->tag("migration_backup.compressor")
 			->args([service(Filesystem::class)]);
 
 		$services->set(Bzip2Compressor::class)
+			->tag("migration_backup.compressor")
 			->args([service(Filesystem::class)]);
 
 		$services->set(ZstdCompressor::class)
+			->tag("migration_backup.compressor")
 			->args([service(Filesystem::class)]);
 
 		$services->set(ZipCompressor::class)
+			->tag("migration_backup.compressor")
 			->args([service(Filesystem::class)]);
 
 		$services->set(Lz4Compressor::class)
+			->tag("migration_backup.compressor")
 			->args([service(Filesystem::class)]);
 
-		$services->set(NoneCompressor::class);
+		$services->set(NoneCompressor::class)
+			->tag("migration_backup.compressor");
 
 		$compressorClass = match ($config['compression_format']) {
 			'gzip' => GzipCompressor::class,
@@ -112,6 +136,72 @@ class MigrationBackupBundle extends AbstractBundle {
 		$services->set(SqliteBackupDriver::class)
 			->tag("migration_backup.driver")
 			->args([service(Filesystem::class)]);
+
+		$services->set(RestoreDriverRegistryInterface::class, RestoreDriverRegistry::class)
+			->args([tagged_iterator("migration_backup.restore_driver")]);
+
+		$services->set(DecompressorRegistryInterface::class, DecompressorRegistry::class)
+			->args([tagged_iterator("migration_backup.compressor")]);
+
+		$services->set(MysqlRestoreDriver::class)
+			->tag("migration_backup.restore_driver")
+			->args([
+				service(Filesystem::class),
+				$config["mysql_binary"],
+			]);
+
+		$services->set(PostgresRestoreDriver::class)
+			->tag("migration_backup.restore_driver")
+			->args([
+				service(Filesystem::class),
+				$config["psql_binary"],
+			]);
+
+		$services->set(SqliteRestoreDriver::class)
+			->tag("migration_backup.restore_driver")
+			->args([service(Filesystem::class)]);
+
+		$services->set(RestoreManager::class)
+			->args([
+				service(ConnectionResolverInterface::class),
+				service(RestoreDriverRegistryInterface::class),
+				service(ListableStorageProviderInterface::class),
+				service(DecompressorRegistryInterface::class),
+				service("event_dispatcher"),
+				service(Filesystem::class),
+			]);
+
+		$services->set(BackupCleaner::class)
+			->args([
+				service(ListableStorageProviderInterface::class),
+				$config["keep_last_n_backups"],
+			]);
+
+		$services->set(BackupCommand::class)
+			->tag("console.command")
+			->args([
+				service(BackupManager::class),
+				$config["database"],
+			]);
+
+		$services->set(ListBackupsCommand::class)
+			->tag("console.command")
+			->args([service(RestoreManager::class)]);
+
+		$services->set(RestoreCommand::class)
+			->tag("console.command")
+			->args([
+				service(RestoreManager::class),
+				$config["database"],
+			]);
+
+		$services->set(CleanBackupsCommand::class)
+			->tag("console.command")
+			->args([
+				service(BackupCleaner::class),
+				$config["database"],
+				$config["keep_last_n_backups"],
+			]);
 
 		$services->set(CommandSubscriber::class)
 			->tag("kernel.event_subscriber")

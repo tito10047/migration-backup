@@ -15,8 +15,10 @@ You know the drill: you run `doctrine:migrations:migrate`, the third command out
 ## ✨ Features
 
 - 🚀 **Automatic backup** before running migrations.
+- ⏪ **Restore**: Load any backup back into the database with a single command.
+- 📋 **Listing**: See what you can restore, with date, size and compression format.
 - 🗜️ **Compression support**: Multi-format support (Gzip, Bzip2, Zstandard, Zip, LZ4) to reduce backup size.
-- 🧹 **Automatic Cleanup**: Keep e.g. only the last 10 backups and save space.
+- 🧹 **Cleanup**: Automatic after every backup, or on demand (with a dry run).
 - 🧩 **Extensible**: Easily add your own custom compressor.
 - 🐘 **Multi-DB support**: Full support for **MySQL**, **PostgreSQL**, and **SQLite**.
 - 🔔 **Events**: Ability to hook into your own logic (Slack notifications, logging, etc.).
@@ -54,6 +56,10 @@ migration_backup:
     # Paths to binaries (if not available globally in PATH)
     backup_binary: 'mysqldump'    # For MySQL
     pg_dump_binary: 'pg_dump'      # For PostgreSQL
+
+    # Clients used for restoring
+    mysql_binary: 'mysql'          # For MySQL
+    psql_binary: 'psql'            # For PostgreSQL
 ```
 
 ## 🚀 Usage
@@ -68,6 +74,69 @@ php bin/console doctrine:migrations:migrate --backup
 
 The console output will inform you of the success:
 `Backup of database default created in /your/project/var/backups/default-2024-03-11-15-55-01.sql.gz`
+
+## 🧰 Commands
+
+The bundle ships four commands, so the parachute is not only packed but can also be opened.
+
+### Back up right now
+
+```bash
+php bin/console migration-backup:backup             # all configured connections
+php bin/console migration-backup:backup default     # just this one
+```
+
+### See what you can restore
+
+```bash
+php bin/console migration-backup:list
+php bin/console migration-backup:list default
+```
+
+```
+ ------------ --------------------- -------- ------------- --------------------------------------
+  Connection   Created               Size     Compression   File
+ ------------ --------------------- -------- ------------- --------------------------------------
+  default      2024-03-13 09:12:44   1.4 MiB  gzip          default-2024-03-13-09-12-44.sql.gz
+  default      2024-03-11 15:55:01   1.4 MiB  gzip          default-2024-03-11-15-55-01.sql.gz
+ ------------ --------------------- -------- ------------- --------------------------------------
+```
+
+Backups are ordered by the timestamp in their file name, so copying the files around
+(and changing their modification time) does not change which one is the newest.
+
+### 🔥 Restore
+
+```bash
+# pick a backup from a list and confirm
+php bin/console migration-backup:restore
+
+# the newest backup of the default connection, no questions asked
+php bin/console migration-backup:restore --latest --force
+
+# a specific file
+php bin/console migration-backup:restore --file=default-2024-03-11-15-55-01.sql.gz
+
+# a backup of another connection, loaded into the default one
+php bin/console migration-backup:restore legacy --latest --target=default
+```
+
+- **The stored backup file is never modified** — it is copied to a temporary working
+  copy, decompressed there, and the working copy is removed afterwards.
+- The compression format is taken from the file name, not from your configuration:
+  a `.sql.gz` backup restores fine even after you switch to `zstd`.
+- **Restoring overwrites the current content of the database.** Without `--force`
+  the command asks for confirmation; in a non-interactive shell (CI, cron) it
+  refuses to run unless `--force` is given.
+
+### 🧹 Clean up old backups
+
+```bash
+php bin/console migration-backup:clean --dry-run    # show what would be removed
+php bin/console migration-backup:clean --keep=3 --force
+```
+
+Without `--keep` the command uses `keep_last_n_backups` from the configuration.
 
 ## 🗜️ Compression
 
@@ -88,6 +157,11 @@ If the required extension is missing, the bundle will throw a `RuntimeException`
 
 You can implement your own compression logic by creating a class that implements `Tito10047\MigrationBackup\Compressor\CompressorInterface`.
 
+To make backups in your format restorable as well, also implement
+`Tito10047\MigrationBackup\Compressor\DecompressorInterface` and tag the service with
+`migration_backup.compressor`. Compressors written before restoring existed keep working
+for backups; restoring a file in their format fails with a clear message instead.
+
 Then, register your service and alias the `migration_backup.compressor` to it:
 
 ```yaml
@@ -104,9 +178,19 @@ Note: If you override the `migration_backup.compressor` service, the `compressio
 
 ## 🛠️ Supported Databases
 
-- **MySQL**: requires `mysqldump` to be installed.
-- **PostgreSQL**: requires `pg_dump` to be installed.
-- **SQLite**: standard file access is enough (automatically copies the `.db` file).
+| Database | Backup needs | Restore needs |
+| --- | --- | --- |
+| **MySQL** | `mysqldump` | `mysql` |
+| **PostgreSQL** | `pg_dump` | `psql` |
+| **SQLite** | file access (copies the `.db` file) | file access (copies it back) |
+
+### Custom Storage
+
+`Tito10047\MigrationBackup\Storage\StorageProviderInterface` is enough for creating
+backups. Listing, cleaning and restoring need a storage that can also be browsed, so
+if you replace the storage provider service (its id is the interface name), implement
+`Tito10047\MigrationBackup\Storage\ListableStorageProviderInterface` — it extends
+`StorageProviderInterface` and adds `list()`, `get()`, `fetch()` and `remove()`.
 
 ## 🪝 Events for Developers
 
@@ -114,6 +198,9 @@ The bundle triggers the following events that you can listen to:
 - `Tito10047\MigrationBackup\Event\BackupStartedEvent`
 - `Tito10047\MigrationBackup\Event\BackupFinishedEvent`
 - `Tito10047\MigrationBackup\Event\BackupFailedEvent`
+- `Tito10047\MigrationBackup\Event\RestoreStartedEvent`
+- `Tito10047\MigrationBackup\Event\RestoreFinishedEvent`
+- `Tito10047\MigrationBackup\Event\RestoreFailedEvent`
 
 ---
 Developed for a peaceful sleep with every deploy. 😊
