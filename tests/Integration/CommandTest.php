@@ -5,8 +5,10 @@ namespace Tito10047\MigrationBackup\Tests\Integration;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
+use Tito10047\MigrationBackup\Tests\Fixture\SectionlessConsoleOutput;
 use Tito10047\MigrationBackup\Tests\Fixture\TestKernel;
 
 /**
@@ -70,6 +72,27 @@ class CommandTest extends KernelTestCase {
 
 		$tester->assertCommandIsSuccessful();
 		$this->assertStringContainsString('No backup', $tester->getDisplay());
+	}
+
+	/**
+	 * `SymfonyStyle::table()` renders into a console section, which the output
+	 * behind `CommandTester` refuses to create — so a table rendered that way
+	 * makes the command untestable for anyone using the bundle.
+	 */
+	public function testListCommandRendersWithoutConsoleSections(): void {
+		$this->runCommand('migration-backup:backup');
+
+		$application = new Application(self::$kernel);
+		$application->setAutoExit(false);
+
+		$output = new SectionlessConsoleOutput(fopen('php://memory', 'w+'));
+		$input  = new ArrayInput([]);
+		$input->setInteractive(false);
+
+		$status = $application->find('migration-backup:list')->run($input, $output);
+
+		$this->assertSame(Command::SUCCESS, $status);
+		$this->assertStringContainsString(basename($this->storedBackups()[0]), $output->fetch());
 	}
 
 	public function testRestoreCommandBringsTheDatabaseBack(): void {
