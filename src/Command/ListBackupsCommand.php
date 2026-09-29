@@ -5,6 +5,7 @@ namespace Tito10047\MigrationBackup\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Helper;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -50,16 +51,22 @@ class ListBackupsCommand extends Command {
 			return Command::SUCCESS;
 		}
 
-		$io->table(
-			['Connection', 'Created', 'Size', 'Compression', 'File'],
-			array_map(static fn (BackupFile $file): array => [
-				$file->connectionName,
-				$file->createdAt->format('Y-m-d H:i:s'),
-				Helper::formatMemory($file->size),
-				$file->isCompressed() ? ltrim($file->compressionExtension, '.') : '-',
-				$file->filename,
-			], $files)
-		);
+		// Deliberately not $io->table(): that one renders into a console section,
+		// which the output behind CommandTester refuses to create. The listing is
+		// static anyway, it never needs to be re-rendered in place.
+		$table = new Table($output);
+		$table->setStyle(clone Table::getStyleDefinition('symfony-style-guide'));
+		$table->setHeaders(['Connection', 'Created', 'Size', 'Compression', 'File']);
+		$table->setRows(array_map(static fn (BackupFile $file): array => [
+			$file->connectionName,
+			$file->createdAt->format('Y-m-d H:i:s'),
+			Helper::formatMemory($file->size),
+			$file->isCompressed() ? ltrim($file->compressionExtension, '.') : '-',
+			$file->filename,
+		], $files));
+		$table->render();
+
+		$io->newLine();
 
 		return Command::SUCCESS;
 	}
