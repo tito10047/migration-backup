@@ -41,6 +41,9 @@ class CommandTest extends KernelTestCase {
 
 	protected function tearDown(): void {
 		$this->fs->remove($this->backupPath);
+		// The restore tests write plain text into the database file; an empty file
+		// is a valid empty SQLite database, so the next test starts from a sane one.
+		file_put_contents($this->databasePath, '');
 		parent::tearDown();
 	}
 
